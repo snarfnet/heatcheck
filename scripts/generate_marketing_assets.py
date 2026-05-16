@@ -92,7 +92,19 @@ def font(size, bold=False):
 
 
 def load_girl(name):
-    return Image.open(ASSETS / f"{name}.imageset" / f"{name}.png").convert("RGBA")
+    return crop_visible(Image.open(ASSETS / f"{name}.imageset" / f"{name}.png").convert("RGBA"), padding=8)
+
+
+def crop_visible(img, padding=0):
+    bbox = img.getchannel("A").getbbox()
+    if not bbox:
+        return img
+    left, top, right, bottom = bbox
+    left = max(0, left - padding)
+    top = max(0, top - padding)
+    right = min(img.width, right + padding)
+    bottom = min(img.height, bottom + padding)
+    return img.crop((left, top, right, bottom))
 
 
 def text_wrap(draw, text, font_obj, max_width):
@@ -155,15 +167,15 @@ def draw_app_screen(size, scene):
     d.text((pad, round(h * 0.35)), scene["state"], font=font(round(w * 0.05)), fill=(255, 255, 255, 220))
 
     girl = load_girl(scene["girl"])
-    paste_center(screen, girl, (round(w * 0.12), round(h * 0.39), round(w * 0.76), round(h * 0.31)))
+    paste_center(screen, girl, (round(w * 0.06), round(h * 0.34), round(w * 0.88), round(h * 0.38)))
 
     bubble = rounded_rect((round(w * 0.82), round(h * 0.105)), round(w * 0.035), (255, 255, 255, 58))
-    screen.alpha_composite(bubble, (round(w * 0.09), round(h * 0.69)))
+    screen.alpha_composite(bubble, (round(w * 0.09), round(h * 0.725)))
     quote = f"「{scene['line']}」"
-    d.text((round(w * 0.14), round(h * 0.715)), quote, font=font(round(w * 0.035)), fill=(255, 255, 255, 255))
+    d.text((round(w * 0.14), round(h * 0.75)), quote, font=font(round(w * 0.035)), fill=(255, 255, 255, 255))
 
     labels = [("風", "扇風機"), ("冷", "冷房"), ("省", "省電力")]
-    by = round(h * 0.835)
+    by = round(h * 0.855)
     bw = round((w - pad * 2 - 20) / 3)
     for i, (icon, label) in enumerate(labels):
         bx = pad + i * (bw + 10)
@@ -203,7 +215,9 @@ def draw_expression_strip(base, x, y, width, height):
     cell_w = width // len(names)
     for i, name in enumerate(names):
         girl = load_girl(name)
-        box = (x + i * cell_w, y, cell_w, height)
+        box = (x + i * cell_w + round(cell_w * 0.05), y, round(cell_w * 0.9), height)
+        plate = rounded_rect((box[2], height), round(height * 0.22), (255, 255, 255, 45))
+        base.alpha_composite(plate, (box[0], y))
         paste_center(base, girl, box)
 
 
@@ -240,15 +254,16 @@ def create_screenshot(size, scene, out_path):
         d.text((margin, y), line, font=sub_font, fill=(255, 255, 255, 232))
         y += round(w * 0.052)
 
-    if scene.get("expression_grid"):
-        draw_expression_strip(canvas, margin, round(h * 0.37), w - margin * 2, round(h * 0.16))
-
     phone_w = round(w * 0.66) if w < 1500 else round(w * 0.50)
     phone_h = round(phone_w * 2.08)
     phone = draw_phone_mock(scene, phone_w, phone_h)
     px = round((w - phone_w) / 2)
     py = round(h * (0.34 if w < 1500 else 0.32))
     canvas.alpha_composite(phone, (px, py))
+
+    if scene.get("expression_grid"):
+        strip_h = round(h * 0.10)
+        draw_expression_strip(canvas, margin, round(h * (0.285 if w < 1500 else 0.27)), w - margin * 2, strip_h)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(out_path, quality=95)
