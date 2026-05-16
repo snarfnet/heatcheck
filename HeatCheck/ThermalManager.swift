@@ -67,7 +67,7 @@ class ThermalManager: NSObject, ObservableObject {
             currentTemp = Double.random(in: 42...46)
         case .nominal:
             currentTemp = Double.random(in: 25...35)
-        case .uncritical:
+        case .fair:
             currentTemp = Double.random(in: 15...25)
         @unknown default:
             currentTemp = 30.0
@@ -104,7 +104,7 @@ class ThermalManager: NSObject, ObservableObject {
             return .critical
         case .serious:
             return temperature >= 45 ? .critical : .hot
-        case .nominal, .uncritical:
+        case .nominal, .fair:
             if temperature < 28 {
                 return .cool
             } else if temperature < 33 {
@@ -232,7 +232,7 @@ class LineDatabase {
     ]
 
     func getLine(for state: ThermalState, duration: TimeInterval) -> String {
-        guard var stateLines = lines[state] else { return "..." }
+        guard let stateLines = lines[state] else { return "..." }
 
         if duration > 120 {
             return "…ZZZ"
