@@ -8,63 +8,69 @@ struct ContentView: View {
             backgroundGradient(for: thermalManager.currentTemp)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                Text("HeatCheck")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+            VStack(spacing: 0) {
+                AdBannerSlotView(placement: .top)
 
-                Spacer()
-
-                VStack(spacing: 10) {
-                    Text("\(Int(thermalManager.currentTemp))°C")
-                        .font(.system(size: 72, weight: .bold))
+                VStack(spacing: 16) {
+                    Text("HeatCheck")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
 
-                    Text(thermalManager.stateText)
-                        .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.8))
-                }
+                    Spacer(minLength: 6)
 
-                Spacer()
+                    VStack(spacing: 10) {
+                        Text("\(Int(thermalManager.currentTemp))°C")
+                            .font(.system(size: 72, weight: .bold))
+                            .foregroundColor(.white)
 
-                CharacterView(state: thermalManager.state, text: thermalManager.currentLine)
-
-                Spacer()
-
-                VStack(spacing: 12) {
-                    HStack(spacing: 12) {
-                        ActionButton(icon: "🌬️", label: "扇風機", action: {
-                            thermalManager.userAction(.fan)
-                        })
-
-                        ActionButton(icon: "🧊", label: "冷たい飲み物", action: {
-                            thermalManager.userAction(.drink)
-                        })
-
-                        ActionButton(icon: "❄️", label: "冷房", action: {
-                            thermalManager.userAction(.ac)
-                        })
+                        Text(thermalManager.stateText)
+                            .font(.system(size: 16))
+                            .foregroundColor(.white.opacity(0.8))
                     }
 
-                    HStack(spacing: 12) {
-                        ActionButton(icon: "🧣", label: "冷たいタオル", action: {
-                            thermalManager.userAction(.towel)
-                        })
+                    Spacer(minLength: 6)
 
-                        ActionButton(icon: "🔋", label: "Low Power", action: {
-                            thermalManager.userAction(.lowPower)
-                        })
+                    CharacterView(state: thermalManager.state, text: thermalManager.currentLine)
+
+                    Spacer(minLength: 6)
+
+                    VStack(spacing: 12) {
+                        HStack(spacing: 12) {
+                            ActionButton(icon: "🌬️", label: "扇風機", action: {
+                                thermalManager.userAction(.fan)
+                            })
+
+                            ActionButton(icon: "🧊", label: "冷たい飲み物", action: {
+                                thermalManager.userAction(.drink)
+                            })
+
+                            ActionButton(icon: "❄️", label: "冷房", action: {
+                                thermalManager.userAction(.ac)
+                            })
+                        }
+
+                        HStack(spacing: 12) {
+                            ActionButton(icon: "🧣", label: "冷たいタオル", action: {
+                                thermalManager.userAction(.towel)
+                            })
+
+                            ActionButton(icon: "🔋", label: "Low Power", action: {
+                                thermalManager.userAction(.lowPower)
+                            })
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    Spacer(minLength: 6)
+
+                    if thermalManager.shouldShowTips {
+                        CoolingTipsView()
                     }
                 }
-                .padding(.horizontal)
+                .padding(16)
 
-                Spacer()
-
-                if thermalManager.shouldShowTips {
-                    CoolingTipsView()
-                }
+                AdBannerSlotView(placement: .bottom)
             }
-            .padding()
         }
         .onAppear {
             thermalManager.startMonitoring()
