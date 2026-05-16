@@ -1,0 +1,44 @@
+name: HeatCheck
+options:
+  bundleIdPrefix: com.tokyonasu
+  deploymentTarget:
+    iOS: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: 5.9
+    TARGETED_DEVICE_FAMILY: "1,2"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    PRODUCT_BUNDLE_IDENTIFIER: com.tokyonasu.HeatCheck
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  HeatCheck:
+    type: application
+    platform: iOS
+    sources:
+      - path: HeatCheck
+        excludes:
+          - GeneratedSource/**
+    settings:
+      base:
+        INFOPLIST_FILE: HeatCheck/Info.plist
+        PRODUCT_NAME: HeatCheck
+    info:
+      path: HeatCheck/Info.plist
+      properties:
+        CFBundleDisplayName: 発熱スマホお知らせ
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSRequiresIPhoneOS: true
+        UIUserInterfaceStyle: Light
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
