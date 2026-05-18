@@ -1,6 +1,6 @@
-import SwiftUI
-import Combine
 import AVFoundation
+import Combine
+import SwiftUI
 
 enum ThermalState: Equatable {
     case cool
@@ -12,25 +12,23 @@ enum ThermalState: Equatable {
 }
 
 enum UserAction {
-    case fan
-    case drink
-    case ac
-    case towel
+    case dimScreen
+    case removeCase
+    case pauseApp
+    case unplug
     case lowPower
 }
 
-class ThermalManager: NSObject, ObservableObject {
-    @Published var currentTemp: Double = 30.0
+final class ThermalManager: NSObject, ObservableObject {
     @Published var state: ThermalState = .normal
-    @Published var currentLine: String = "こんにちは"
+    @Published var currentLine: String = "今の熱状態を見ているよ"
     @Published var stateText: String = "通常"
+    @Published var statusDetail: String = "iOSの熱状態は通常です。"
     @Published var shouldShowTips: Bool = false
 
     private var timer: Timer?
-    private var lastHighTempTime: Date?
-    private var recoveringUntil: Date?
-    private var synthesizer = AVSpeechSynthesizer()
-
+    private var lastSpokenLine: String?
+    private let synthesizer = AVSpeechSynthesizer()
     private let lineDatabase = LineDatabase()
 
     override init() {
@@ -38,84 +36,49 @@ class ThermalManager: NSObject, ObservableObject {
     }
 
     func startMonitoring() {
-        let notificationCenter = NotificationCenter.default
-        notificationCenter.addObserver(
+        guard timer == nil else { return }
+
+        NotificationCenter.default.addObserver(
             self,
             selector: #selector(thermalStateDidChange),
             name: ProcessInfo.thermalStateDidChangeNotification,
             object: nil
         )
 
-        timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            self?.updateTemperature()
+        timer = Timer.scheduledTimer(withTimeInterval: 8.0, repeats: true) { [weak self] _ in
+            self?.updateState(speak: false)
         }
 
-        updateState()
+        updateState(speak: true)
     }
 
     @objc private func thermalStateDidChange() {
-        updateState()
+        updateState(speak: true)
     }
 
-    private func updateTemperature() {
+    private func updateState(speak: Bool) {
         let thermalState = ProcessInfo.processInfo.thermalState
-
-        switch thermalState {
-        case .critical:
-            currentTemp = Double.random(in: 46...50)
-        case .serious:
-            currentTemp = Double.random(in: 42...46)
-        case .nominal:
-            currentTemp = Double.random(in: 25...35)
-        case .fair:
-            currentTemp = Double.random(in: 15...25)
-        @unknown default:
-            currentTemp = 30.0
-        }
-
-        updateState()
-    }
-
-    private func updateState() {
-        let thermalState = ProcessInfo.processInfo.thermalState
-
-        if let recoveringUntil, Date() < recoveringUntil, thermalState != .critical {
-            state = .recovering
-            stateText = "回復中"
-            shouldShowTips = false
-            updateDialogue()
-            return
-        }
-
-        state = state(for: currentTemp, thermalState: thermalState)
+        state = state(for: thermalState)
         stateText = label(for: state)
-        shouldShowTips = state == .hot || state == .critical
+        statusDetail = detail(for: thermalState)
+        shouldShowTips = state == .warm || state == .hot || state == .critical
 
-        if state == .hot || state == .critical {
-            lastHighTempTime = Date()
+        currentLine = lineDatabase.getLine(for: state)
+        if speak {
+            speakLine(currentLine)
         }
-
-        updateDialogue()
     }
 
-    private func state(for temperature: Double, thermalState: ProcessInfo.ThermalState) -> ThermalState {
+    private func state(for thermalState: ProcessInfo.ThermalState) -> ThermalState {
         switch thermalState {
+        case .nominal:
+            return .normal
+        case .fair:
+            return .warm
+        case .serious:
+            return .hot
         case .critical:
             return .critical
-        case .serious:
-            return temperature >= 45 ? .critical : .hot
-        case .nominal, .fair:
-            if temperature < 28 {
-                return .cool
-            } else if temperature < 33 {
-                return .normal
-            } else if temperature < 38 {
-                return .warm
-            } else if temperature < 45 {
-                return .hot
-            } else {
-                return .critical
-            }
         @unknown default:
             return .normal
         }
@@ -124,46 +87,58 @@ class ThermalManager: NSObject, ObservableObject {
     private func label(for state: ThermalState) -> String {
         switch state {
         case .cool:
-            return "涼しい"
+            return "涼しめ"
         case .normal:
             return "通常"
         case .warm:
             return "少し熱い"
         case .hot:
-            return "暑い"
+            return "熱い"
         case .critical:
-            return "危険"
+            return "かなり熱い"
         case .recovering:
-            return "回復中"
+            return "対策メモ"
         }
     }
 
-    private func updateDialogue() {
-        let duration = lastHighTempTime != nil ? -lastHighTempTime!.timeIntervalSinceNow : 0
-        currentLine = lineDatabase.getLine(for: state, duration: duration)
-        speakLine(currentLine)
+    private func detail(for thermalState: ProcessInfo.ThermalState) -> String {
+        switch thermalState {
+        case .nominal:
+            return "iOSの熱状態は通常です。端末をそのまま使えます。"
+        case .fair:
+            return "iOSが少し熱を持っている状態として扱っています。"
+        case .serious:
+            return "iOSが高めの熱状態として扱っています。少し休ませるのがおすすめです。"
+        case .critical:
+            return "iOSがかなり高い熱状態として扱っています。充電や重い処理を止めてください。"
+        @unknown default:
+            return "iOSから取得した熱状態の目安です。"
+        }
     }
 
     func userAction(_ action: UserAction) {
+        state = .recovering
+        stateText = "対策メモ"
+        statusDetail = "このボタンは対策のメモです。端末の温度を測定したり、下げたりするものではありません。"
+        shouldShowTips = true
+
         let responseLine = lineDatabase.getResponseLine(for: action)
         currentLine = responseLine
         speakLine(responseLine)
 
-        withAnimation(.easeInOut(duration: 1.0)) {
-            currentTemp -= Double.random(in: 2...5)
-            currentTemp = max(15, currentTemp)
-            recoveringUntil = Date().addingTimeInterval(8)
-            state = .recovering
-            stateText = "回復中"
-            shouldShowTips = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.updateState(speak: false)
         }
     }
 
     private func speakLine(_ text: String) {
+        guard lastSpokenLine != text else { return }
+        lastSpokenLine = text
+
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
         utterance.rate = 0.5
-        utterance.pitchMultiplier = 1.2
+        utterance.pitchMultiplier = 1.15
 
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
@@ -177,75 +152,72 @@ class ThermalManager: NSObject, ObservableObject {
     }
 }
 
-class LineDatabase {
+final class LineDatabase {
     private let lines: [ThermalState: [String]] = [
         .cool: [
-            "涼しいね～",
-            "快適です",
-            "いい気分～",
-            "シャキッとしてる",
+            "涼しめでいい感じ",
+            "今は落ち着いているよ",
+            "このまま様子を見よう",
         ],
         .normal: [
-            "いい天気",
-            "ちょうどいい",
-            "快適ですね",
-            "普通に過ごせる",
+            "今は通常だよ",
+            "無理なく使えそう",
+            "熱状態は落ち着いているよ",
+            "様子を見ていこう",
         ],
         .warm: [
-            "あ、ちょっと暖かい",
-            "汗をかき始めた",
-            "飲み物、欲しい",
-            "扇風機、欲しい",
+            "少し熱を持っているみたい",
+            "明るさを少し下げてもいいかも",
+            "ケースを外すと楽になることがあるよ",
+            "重いアプリは少し休ませよう",
         ],
         .hot: [
-            "暑い！",
-            "暑いよ～！",
-            "マジで暑い",
-            "うわ、熱い",
-            "これ、やばくない？",
-            "あちい～",
-            "息、苦しい",
-            "汗、ダラダラ",
+            "熱状態が高めだよ",
+            "少し休ませてあげよう",
+            "充電中なら一度止めるのもあり",
+            "動画やゲームは休憩しよう",
         ],
         .critical: [
-            "ヤバいヤバいヤバい",
-            "死ぬ、死ぬ",
-            "えっ、何これ",
-            "地獄",
-            "終わり",
-            "（呼吸が荒い）",
+            "かなり熱い状態だよ",
+            "すぐに休ませてね",
+            "充電と重い処理を止めよう",
+            "涼しい場所で様子を見よう",
         ],
         .recovering: [
-            "あ、涼しい",
-            "生き返った",
-            "ありがとう",
-            "気持ちいい～",
+            "対策をメモしたよ",
+            "無理せず様子を見よう",
+            "少し休ませてあげてね",
         ],
     ]
 
     private let responseLines: [UserAction: [String]] = [
-        .fan: ["あ、風…", "ありがとう", "助かる～", "気持ちいい", "生き返った"],
-        .drink: ["あ、冷たい…", "ありがとう", "これ最高", "ごくごく", "ぷはぁ"],
-        .ac: ["涼しい…", "ありがとう", "助かった", "気持ちいい～", "えへへ"],
-        .towel: ["あ、気持ちいい", "ありがとう", "生き返った", "やさしい…"],
-        .lowPower: ["あ、楽になった", "ありがとう", "これで大丈夫"],
+        .dimScreen: [
+            "明るさを下げるのはいい対策だよ",
+            "画面を少し暗くして様子を見よう",
+        ],
+        .removeCase: [
+            "ケースを外すと熱が逃げやすいよ",
+            "風通しをよくしてあげよう",
+        ],
+        .pauseApp: [
+            "重いアプリを休ませよう",
+            "ゲームや動画は少し休憩だね",
+        ],
+        .unplug: [
+            "充電を止めて様子を見よう",
+            "熱い時の充電は少し休ませてね",
+        ],
+        .lowPower: [
+            "低電力モードも助けになるよ",
+            "負荷を下げてゆっくりいこう",
+        ],
     ]
 
-    func getLine(for state: ThermalState, duration: TimeInterval) -> String {
-        guard let stateLines = lines[state] else { return "..." }
-
-        if duration > 120 {
-            return "…ZZZ"
-        } else if duration > 90 {
-            return stateLines.last ?? "…"
-        } else if duration > 60 {
-            return stateLines.count > 1 ? stateLines[stateLines.count - 2] : stateLines[0]
-        }
-
-        return stateLines.randomElement() ?? "..."
+    func getLine(for state: ThermalState) -> String {
+        lines[state]?.randomElement() ?? "様子を見ているよ"
     }
 
     func getResponseLine(for action: UserAction) -> String {
-        return responseLines[action]?.randomElement() ?? "ありがとう"
+        responseLines[action]?.randomElement() ?? "対策をメモしたよ"
     }
 }

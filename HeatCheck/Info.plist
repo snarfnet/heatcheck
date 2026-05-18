@@ -22,8 +22,6 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>広告の表示と効果測定のために使います。許可しなくてもアプリは使えます。</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-9404799280370656~6558437008</string>
 	<key>GADTopBannerAdUnitID</key>

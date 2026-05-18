@@ -9,7 +9,7 @@ settings:
     SWIFT_VERSION: 5.9
     TARGETED_DEVICE_FAMILY: "1,2"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     PRODUCT_BUNDLE_IDENTIFIER: com.tokyonasu.HeatCheck
     CODE_SIGN_STYLE: Automatic
     GAD_APPLICATION_IDENTIFIER: "ca-app-pub-9404799280370656~6558437008"
@@ -47,7 +47,6 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSRequiresIPhoneOS: true
         UIUserInterfaceStyle: Light
-        NSUserTrackingUsageDescription: "広告の表示と効果測定のために使います。許可しなくてもアプリは使えます。"
         GADApplicationIdentifier: "$(GAD_APPLICATION_IDENTIFIER)"
         GADTopBannerAdUnitID: "$(GAD_TOP_BANNER_AD_UNIT_ID)"
         GADBottomBannerAdUnitID: "$(GAD_BOTTOM_BANNER_AD_UNIT_ID)"

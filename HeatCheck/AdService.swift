@@ -1,4 +1,3 @@
-import AppTrackingTransparency
 import GoogleMobileAds
 import SwiftUI
 import UIKit
@@ -18,6 +17,14 @@ struct AdConfiguration {
         case .bottom:
             return bundleValue(for: "GADBottomBannerAdUnitID", fallback: sampleBannerUnitID)
         }
+    }
+
+    static func request() -> Request {
+        let request = Request()
+        let extras = Extras()
+        extras.additionalParameters = ["npa": "1"]
+        request.register(extras)
+        return request
     }
 
     private static func bundleValue(for key: String, fallback: String) -> String {
@@ -40,22 +47,9 @@ final class AdService: ObservableObject {
 
     func start() async {
         guard !isReady else { return }
-        await requestTrackingAuthorizationIfNeeded()
+        MobileAds.shared.requestConfiguration.publisherPrivacyPersonalizationState = .disabled
         await MobileAds.shared.start()
         isReady = true
-    }
-
-    private func requestTrackingAuthorizationIfNeeded() async {
-        guard #available(iOS 14.5, *),
-              ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
-            return
-        }
-
-        _ = await withCheckedContinuation { continuation in
-            ATTrackingManager.requestTrackingAuthorization { status in
-                continuation.resume(returning: status)
-            }
-        }
     }
 }
 
@@ -81,14 +75,14 @@ private struct BannerViewContainer: UIViewRepresentable {
         let banner = BannerView(adSize: AdSizeBanner)
         banner.adUnitID = adUnitID
         banner.rootViewController = UIApplication.shared.adRootViewController
-        banner.load(Request())
+        banner.load(AdConfiguration.request())
         return banner
     }
 
     func updateUIView(_ banner: BannerView, context: Context) {
         if banner.adUnitID != adUnitID {
             banner.adUnitID = adUnitID
-            banner.load(Request())
+            banner.load(AdConfiguration.request())
         }
     }
 }

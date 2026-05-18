@@ -29,53 +29,53 @@ IPAD_SIZES = {
 SCENES = [
     {
         "name": "01_home",
-        "headline": "スマホの熱さを\nひと目で確認",
-        "sub": "温度の目安と状態を、女の子がやさしく知らせます。",
-        "temp": "34°C",
-        "state": "少し熱い",
-        "line": "あ、ちょっと暖かい",
-        "girl": "heatgirl_warm_03",
-        "palette": ((255, 176, 88), (251, 87, 79)),
+        "headline": "iOSの熱状態を\nひと目で確認",
+        "sub": "実測温度ではなく、iOSの熱状態をもとにした目安を表示します。",
+        "state": "通常",
+        "detail": "iOSの熱状態は通常です",
+        "line": "今は通常だよ",
+        "girl": "heatgirl_normal_03",
+        "palette": ((73, 170, 200), (70, 190, 122)),
     },
     {
         "name": "02_alert",
-        "headline": "熱くなったら\nすぐお知らせ",
-        "sub": "発熱サインを見逃さず、危険になる前に気づけます。",
-        "temp": "42°C",
-        "state": "暑い",
-        "line": "うわ、熱い",
+        "headline": "熱状態が高めなら\nやさしくお知らせ",
+        "sub": "高めの熱状態を、女の子の表情と服装でわかりやすく知らせます。",
+        "state": "熱い",
+        "detail": "少し休ませるのがおすすめです",
+        "line": "少し休ませてあげよう",
         "girl": "heatgirl_hot_05",
-        "palette": ((255, 116, 76), (218, 53, 67)),
+        "palette": ((242, 101, 73), (174, 52, 98)),
     },
     {
         "name": "03_cooling",
-        "headline": "冷却アクションで\nすばやく対処",
-        "sub": "扇風機、冷房、低電力モードなどをワンタップで記録。",
-        "temp": "39°C",
-        "state": "回復中",
-        "line": "ありがとう",
+        "headline": "すぐできる対策を\nメモできる",
+        "sub": "明るさ、ケース、充電、重いアプリなど、見直したい項目をすぐ確認できます。",
+        "state": "対策メモ",
+        "detail": "端末を直接冷却する機能ではありません",
+        "line": "対策をメモしたよ",
         "girl": "heatgirl_recovering_02",
-        "palette": ((82, 184, 232), (54, 123, 214)),
+        "palette": ((72, 160, 214), (63, 108, 196)),
     },
     {
         "name": "04_tips",
-        "headline": "冷却のコツも\nすぐ見られる",
-        "sub": "画面の明るさ、ケース、重いアプリなどをチェック。",
-        "temp": "45°C",
-        "state": "危険",
-        "line": "ヤバいヤバい",
-        "girl": "heatgirl_critical_04",
-        "palette": ((255, 87, 79), (132, 55, 128)),
+        "headline": "熱を持った時の\nヒントを表示",
+        "sub": "充電を休ませる、直射日光を避けるなど、基本の対策を確認できます。",
+        "state": "少し熱い",
+        "detail": "iOSが少し熱を持っている状態です",
+        "line": "ケースを外すと楽になることがあるよ",
+        "girl": "heatgirl_warm_04",
+        "palette": ((238, 155, 63), (223, 77, 74)),
     },
     {
         "name": "05_expressions",
-        "headline": "温度に合わせて\n服と表情が変わる",
-        "sub": "涼しい時も、熱い時も、状態に合った反応で知らせます。",
-        "temp": "28°C",
-        "state": "通常",
-        "line": "ちょうどいい",
-        "girl": "heatgirl_normal_05",
-        "palette": ((255, 194, 103), (74, 154, 232)),
+        "headline": "状態に合わせて\n服と表情が変わる",
+        "sub": "通常、少し熱い、熱い、かなり熱いなど、状態に合った反応で知らせます。",
+        "state": "かなり熱い",
+        "detail": "充電や重い処理を止めてください",
+        "line": "すぐに休ませてね",
+        "girl": "heatgirl_critical_04",
+        "palette": ((220, 72, 86), (112, 58, 130)),
         "expression_grid": True,
     },
 ]
@@ -157,14 +157,16 @@ def draw_app_screen(size, scene):
     d = ImageDraw.Draw(screen)
 
     pad = round(w * 0.07)
-    d.text((pad, round(h * 0.07)), "HeatCheck", font=font(round(w * 0.075), bold=True), fill=(255, 255, 255, 245))
-    d.text(
-        (pad, round(h * 0.19)),
-        scene["temp"],
-        font=font(round(w * 0.18), bold=True),
-        fill=(255, 255, 255, 255),
-    )
-    d.text((pad, round(h * 0.35)), scene["state"], font=font(round(w * 0.05)), fill=(255, 255, 255, 220))
+    d.text((pad, round(h * 0.065)), "発熱スマホお知らせ", font=font(round(w * 0.052), bold=True), fill=(255, 255, 255, 245))
+
+    card_x = pad
+    card_y = round(h * 0.15)
+    card_w = w - pad * 2
+    card_h = round(h * 0.20)
+    d.rounded_rectangle((card_x, card_y, card_x + card_w, card_y + card_h), radius=round(w * 0.028), fill=(0, 0, 0, 44))
+    d.text((card_x + round(w * 0.04), card_y + round(h * 0.025)), "現在の熱状態", font=font(round(w * 0.034), bold=True), fill=(255, 255, 255, 218))
+    d.text((card_x + round(w * 0.04), card_y + round(h * 0.065)), scene["state"], font=font(round(w * 0.09), bold=True), fill=(255, 255, 255, 255))
+    d.text((card_x + round(w * 0.04), card_y + round(h * 0.152)), scene["detail"], font=font(round(w * 0.027)), fill=(255, 255, 255, 224))
 
     girl = load_girl(scene["girl"])
     paste_center(screen, girl, (round(w * 0.06), round(h * 0.34), round(w * 0.88), round(h * 0.38)))
@@ -172,25 +174,15 @@ def draw_app_screen(size, scene):
     bubble = rounded_rect((round(w * 0.82), round(h * 0.105)), round(w * 0.035), (255, 255, 255, 58))
     screen.alpha_composite(bubble, (round(w * 0.09), round(h * 0.725)))
     quote = f"「{scene['line']}」"
-    d.text((round(w * 0.14), round(h * 0.75)), quote, font=font(round(w * 0.035)), fill=(255, 255, 255, 255))
+    d.text((round(w * 0.14), round(h * 0.75)), quote, font=font(round(w * 0.032), bold=True), fill=(255, 255, 255, 255))
 
-    labels = [("風", "扇風機"), ("冷", "冷房"), ("省", "省電力")]
+    labels = [("明るさ", "sun.min"), ("ケース", "iphone"), ("休憩", "pause")]
     by = round(h * 0.855)
     bw = round((w - pad * 2 - 20) / 3)
-    for i, (icon, label) in enumerate(labels):
+    for i, (label, icon) in enumerate(labels):
         bx = pad + i * (bw + 10)
         d.rounded_rectangle((bx, by, bx + bw, by + round(h * 0.075)), radius=round(w * 0.025), fill=(255, 255, 255, 45))
-        d.ellipse(
-            (
-                bx + round(bw * 0.10),
-                by + round(h * 0.018),
-                bx + round(bw * 0.27),
-                by + round(h * 0.056),
-            ),
-            fill=(255, 255, 255, 52),
-        )
-        d.text((bx + round(bw * 0.145), by + round(h * 0.018)), icon, font=font(round(w * 0.025), bold=True), fill=(255, 255, 255, 255))
-        d.text((bx + round(bw * 0.34), by + round(h * 0.023)), label, font=font(round(w * 0.023), bold=True), fill=(255, 255, 255, 245))
+        d.text((bx + round(bw * 0.18), by + round(h * 0.024)), label, font=font(round(w * 0.026), bold=True), fill=(255, 255, 255, 245))
 
     return screen
 
@@ -227,10 +219,10 @@ def create_screenshot(size, scene, out_path):
     canvas = gradient(size, top, bottom)
     d = ImageDraw.Draw(canvas)
 
-    for i, alpha in enumerate((42, 28, 20)):
+    for i, alpha in enumerate((34, 24, 16)):
         cx = round(w * (0.15 + i * 0.22))
         cy = round(h * (0.15 + i * 0.08))
-        r = round(w * (0.45 - i * 0.06))
+        r = round(w * (0.42 - i * 0.06))
         glow = Image.new("RGBA", size, (0, 0, 0, 0))
         gd = ImageDraw.Draw(glow)
         gd.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255, alpha))
@@ -245,11 +237,8 @@ def create_screenshot(size, scene, out_path):
         d.text((margin, y), line, font=headline_font, fill=(255, 255, 255, 255))
         y += round(w * 0.096)
     y += round(w * 0.025)
-    sub_rows = text_wrap(d, scene["sub"], sub_font, round(w * 0.76))
-    if len(sub_rows) > 1 and sub_rows[-1] in {"。", "、"}:
-        sub_rows[-2] += sub_rows[-1]
-        sub_rows.pop()
-    for line in sub_rows:
+
+    for line in text_wrap(d, scene["sub"], sub_font, round(w * 0.76)):
         d.text((margin + 2, y + 2), line, font=sub_font, fill=(0, 0, 0, 42))
         d.text((margin, y), line, font=sub_font, fill=(255, 255, 255, 232))
         y += round(w * 0.052)
