@@ -8,7 +8,7 @@ APP_INFO_LOC_ID = "969d44f2-5d18-4113-ad85-65ea79ae7495"
 VERSION_ID = "535532a8-fe4d-48f4-aeb0-2578dc88269e"
 VERSION_LOC_ID = "c7f8773f-224d-4fe7-bc80-257366fbfefd"
 PRIVACY_URL = "https://github.com/snarfnet/HeatCheck/blob/main/PRIVACY.md"
-SUPPORT_URL = "https://github.com/snarfnet/HeatCheck/issues"
+SUPPORT_URL = "https://snarfnet.github.io/app-support/"
 
 
 def request(method, path, payload):
@@ -27,7 +27,7 @@ request(
             "id": APP_INFO_LOC_ID,
             "attributes": {
                 "name": "発熱スマホお知らせ",
-                "subtitle": "iOSの熱状態をやさしく表示",
+                "subtitle": "スマホの熱状態をやさしく表示",
                 "privacyPolicyUrl": PRIVACY_URL,
             },
         }
