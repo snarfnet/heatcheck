@@ -3,6 +3,10 @@ name: iOS Upload
 on:
   workflow_dispatch:
 
+env:
+  ASC_KEY_ID: WDXGY9WX55
+  ASC_ISSUER_ID: 2be0734f-943a-4d61-9dc9-5d9045c46fec
+
 jobs:
   upload:
     name: Archive and Upload HeatCheck
@@ -29,13 +33,24 @@ jobs:
       - name: Set up ASC API Key
         env:
           ASC_API_KEY_CONTENT: ${{ secrets.ASC_API_KEY_CONTENT }}
+          ASC_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
-          if echo "$ASC_API_KEY_CONTENT" | grep -q "BEGIN PRIVATE KEY"; then
-            printf '%s' "$ASC_API_KEY_CONTENT" > ~/.appstoreconnect/private_keys/AuthKey_WDXGY9WX55.p8
+          DEST=~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          if [ -n "$ASC_API_KEY_CONTENT" ]; then
+            if echo "$ASC_API_KEY_CONTENT" | grep -q "BEGIN PRIVATE KEY"; then
+              printf '%s' "$ASC_API_KEY_CONTENT" > "$DEST"
+            else
+              echo "$ASC_API_KEY_CONTENT" | base64 -D > "$DEST"
+            fi
+          elif [ -n "$ASC_API_KEY_BASE64" ]; then
+            echo "$ASC_API_KEY_BASE64" | base64 -d > "$DEST"
           else
-            echo "$ASC_API_KEY_CONTENT" | base64 -D > ~/.appstoreconnect/private_keys/AuthKey_WDXGY9WX55.p8
+            echo "::error::No API key secret found (need ASC_API_KEY_CONTENT or APP_STORE_CONNECT_API_KEY_BASE64)"
+            exit 1
           fi
+          chmod 600 "$DEST"
+          echo "ASC_P8_PATH=$DEST" >> "$GITHUB_ENV"
 
       - name: Archive
         run: |
@@ -49,13 +64,13 @@ jobs:
             DEVELOPMENT_TEAM=83VGKGSQUH \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_WDXGY9WX55.p8 \
-            -authenticationKeyID WDXGY9WX55 \
-            -authenticationKeyIssuerID 2be0734f-943a-4d61-9dc9-5d9045c46fec
+            -authenticationKeyPath "$ASC_P8_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
       - name: Export IPA
         run: |
-          cat > /tmp/ExportOptions.plist <<EOF
+          cat > /tmp/ExportOptions.plist <<'PLIST'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -70,16 +85,16 @@ jobs:
             <string>export</string>
           </dict>
           </plist>
-          EOF
+          PLIST
 
           xcodebuild -exportArchive \
             -archivePath build/HeatCheck.xcarchive \
             -exportOptionsPlist /tmp/ExportOptions.plist \
             -exportPath build/export \
             -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_WDXGY9WX55.p8 \
-            -authenticationKeyID WDXGY9WX55 \
-            -authenticationKeyIssuerID 2be0734f-943a-4d61-9dc9-5d9045c46fec
+            -authenticationKeyPath "$ASC_P8_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
       - name: Upload to App Store Connect
         run: |
@@ -88,5 +103,5 @@ jobs:
           xcrun altool --upload-app \
             --type ios \
             --file "$IPA_PATH" \
-            --apiKey WDXGY9WX55 \
-            --apiIssuer 2be0734f-943a-4d61-9dc9-5d9045c46fec
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
