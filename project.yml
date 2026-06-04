@@ -92,6 +92,7 @@ targets:
           - SKAdNetworkIdentifier: ppxm28t8ap.skadnetwork
           - SKAdNetworkIdentifier: kbmxgpxpgc.skadnetwork
           - SKAdNetworkIdentifier: uw77j35x4d.skadnetwork
+        NSUserTrackingUsageDescription: "広告の最適化のため、端末の広告識別子へのアクセスを求めています。"
         UILaunchScreen:
           UIColorName: ""
         UISupportedInterfaceOrientations:
