@@ -55,6 +55,28 @@ jobs:
           chmod 600 "$DEST"
           echo "ASC_P8_PATH=$DEST" >> "$GITHUB_ENV"
 
+      - name: Prepare signing keychain
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+
+      - name: Create CI distribution certificate
+        env:
+          BUILD_KEYCHAIN: build.keychain
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: python3 scripts/create_distribution_certificate.py
+
+      - name: Prepare App Store provisioning profile
+        env:
+          APP_BUNDLE_ID: com.tokyonasu.HeatCheck
+          PROFILE_NAME: "HeatCheck App Store"
+          REFRESH_PROFILE: "true"
+        run: python3 scripts/prepare_app_store_profile.py
+
       - name: Archive
         run: |
           xcodebuild archive \
@@ -63,8 +85,11 @@ jobs:
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath build/HeatCheck.xcarchive \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=83VGKGSQUH \
+            PROVISIONING_PROFILE_SPECIFIER="HeatCheck App Store" \
+            PRODUCT_BUNDLE_IDENTIFIER=com.tokyonasu.HeatCheck \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             -allowProvisioningUpdates \
             -authenticationKeyPath "$ASC_P8_PATH" \
@@ -82,6 +107,13 @@ jobs:
             <string>app-store-connect</string>
             <key>teamID</key>
             <string>83VGKGSQUH</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.tokyonasu.HeatCheck</key>
+              <string>HeatCheck App Store</string>
+            </dict>
             <key>uploadSymbols</key>
             <true/>
             <key>destination</key>
