@@ -48,6 +48,7 @@ targets:
         LSRequiresIPhoneOS: true
         UIUserInterfaceStyle: Light
         GADApplicationIdentifier: "$(GAD_APPLICATION_IDENTIFIER)"
+        GADDelayAppMeasurementInit: true
         GADTopBannerAdUnitID: "$(GAD_TOP_BANNER_AD_UNIT_ID)"
         GADBottomBannerAdUnitID: "$(GAD_BOTTOM_BANNER_AD_UNIT_ID)"
         SKAdNetworkItems:

@@ -27,6 +27,9 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Install Python dependencies
+        run: pip3 install --break-system-packages PyJWT requests
+
       - name: Generate Xcode project
         run: xcodegen generate
 
@@ -105,3 +108,8 @@ jobs:
             --file "$IPA_PATH" \
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Submit for Review
+        env:
+          APP_VERSION: "1.0"
+        run: python3 scripts/submit_review.py ${{ github.run_number }}
